@@ -106,6 +106,9 @@ local function defaultConfig(home)
         -- when linking to a note in subdir/, create a [[subdir/title]] link
         -- instead of a [[title only]] link
         subdirs_in_links = true,
+        -- additional directories to search when inserting links
+        -- if nil, only searches home directory
+        search_dirs = nil,
         -- integrate with calendar-vim
         plug_into_calendar = true,
         calendar_opts = {
@@ -1822,6 +1825,8 @@ local function InsertLink(opts)
             return
         end
 
+        -- Use search_dirs if configured, otherwise fall back to home
+        local search_paths = M.Cfg.search_dirs or { M.Cfg.home }
         local cwd = M.Cfg.home
         local find_command = M.Cfg.find_command
         local sort = M.Cfg.sort
@@ -1858,7 +1863,7 @@ local function InsertLink(opts)
         if opts.with_live_grep then
             builtin.live_grep({
                 prompt_title = "Insert link to note with live grep",
-                cwd = cwd,
+                search_dirs = search_paths,
                 attach_mappings = attach_mappings,
                 find_command = find_command,
                 sort = sort,
@@ -1866,7 +1871,7 @@ local function InsertLink(opts)
         else
             find_files_sorted({
                 prompt_title = "Insert link to note",
-                cwd = cwd,
+                search_dirs = search_paths,
                 attach_mappings = attach_mappings,
                 find_command = find_command,
                 sort = sort,
