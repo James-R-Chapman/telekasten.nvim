@@ -1141,7 +1141,17 @@ local function find_files_sorted(opts)
     local search_depth = opts.search_depth or nil
     local scan_opts = { search_pattern = search_pattern, depth = search_depth }
 
-    local file_list = scan.scan_dir(opts.cwd, scan_opts)
+    -- Support searching multiple directories
+    local file_list = {}
+    if opts.search_dirs then
+        for _, dir in ipairs(opts.search_dirs) do
+            local dir_files = scan.scan_dir(dir, scan_opts)
+            vim.list_extend(file_list, dir_files)
+        end
+    else
+        file_list = scan.scan_dir(opts.cwd, scan_opts)
+    end
+
     local filter_extensions = opts.filter_extensions or M.Cfg.filter_extensions
     file_list = filter_filetypes(file_list, filter_extensions)
     local sort_option = opts.sort or "filename"
@@ -1164,7 +1174,19 @@ local function find_files_sorted(opts)
     local function iconic_display(display_entry)
         local display_opts = {
             path_display = function(_, e)
-                return e:gsub(tkutils.escape(opts.cwd .. "/"), "")
+                -- When using search_dirs, show relative path from each dir
+                if opts.search_dirs then
+                    for _, dir in ipairs(opts.search_dirs) do
+                        local pattern = tkutils.escape(dir .. "/")
+                        local result = e:gsub(pattern, "")
+                        if result ~= e then
+                            return result
+                        end
+                    end
+                    return e
+                else
+                    return e:gsub(tkutils.escape(opts.cwd .. "/"), "")
+                end
             end,
         }
 
